@@ -2,38 +2,28 @@
 # -*- coding: utf-8 -*-
 import Game
 
-def minimax(position, depth, alpha=-float('inf'), beta=float('inf'), maximizing_player=True):
+def minimax(position, depth):
     if depth == 0 or position.won():
         return position.static_evaluation()
 
-    if maximizing_player:
+    max_number = -float('inf')
+    
+    for possible_move in position.possible_moves():
+        position_copy = position.copy()
 
-        max_number = -float('inf')
-        
-        for possible_move in position.possible_moves():
-            position_copy = position.copy()
+        if position_copy.move(*possible_move):
+            number = minimax(position_copy, depth - 1)
 
-            if position_copy.move(*possible_move):
-                number = minimax(position_copy, depth - 1, alpha, beta)
+            max_number = max([number, max_number])
 
-                max_number = max([number, max_number])
-
-                alpha = max([alpha, number])
-
-                if beta <= alpha:
-                    break
-
-        return max_number
+    return max_number
 
 
-
-
-max_depth = 3
+max_depth = 1
 
 
 def main():
-
-    base_game = Game.Game("stacks.txt")
+    base_game = Game.Game("../input/stacks.txt")
 
     curr_game = base_game.copy()
     next_game = base_game.copy()
@@ -43,9 +33,8 @@ def main():
 
     used_steps = set()
 
-    while not next_game.won() and step < 50:
+    while not next_game.won() and step < 29*1.5:
         max_number = -float('inf')
-        max_height = -float('inf')
         move_used = None
 
         #  print(f'{step}', end='\r')
@@ -58,10 +47,9 @@ def main():
                 number = minimax(position_copy, max_depth)
                 #  print(str(number) + ", ", end='')
 
-                if number >= max_number and (hash(curr_game), possible_move) not in used_steps:
+                if number > max_number and (hash(curr_game), possible_move) not in used_steps:
                     next_game = position_copy.copy()
                     max_number = number
-                    max_height = possible_move[1]
                     move_used = possible_move[:]
         #  print(']')
 
@@ -73,29 +61,14 @@ def main():
         step += 1
         print()
 
-        if all([(hash(curr_game), p) in used_steps for p in curr_game.possible_moves()]):
-            print("Ended early!")
-            break
+        #  if all([(hash(curr_game), p) in used_steps for p in curr_game.possible_moves()]):
+            #  print("Ended early!")
+            #  break
 
 
-    #  print(curr_game.static_evaluation())
-    #  curr_game.print_stacks()
-    #  print(list(curr_game.possible_moves()))
-
-    #  curr_game.move(0, 1, 4)
-    #  print(curr_game.static_evaluation())
-    #  curr_game.print_stacks()
-    #  print(list(curr_game.possible_moves()))
-
-    #  curr_game.move(4, 2, 0)
-    #  print(curr_game.static_evaluation())
-    #  curr_game.print_stacks()
-    #  print(list(curr_game.possible_moves()))
+    print("We won!!! 🎉")
     print(step)
-
-
-    #  for sol in soln:
-        #  sol[0].data.print_stacks()
+    next_game.print_stacks()
 
 
 if __name__ == "__main__":

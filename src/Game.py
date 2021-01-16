@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
+import os.path
 
 
 # ---------------------- Block Classes ---------------------------------------
@@ -25,14 +26,148 @@ colors_abbrev = {
 
 
 class Block:
+    '''Block class that contains number and color of a block
+
+    Additionally contains some helper methods that will help simplify code later ahead
+
+    Attributes:
+       number(int): Contains the number for this block (practically a number from 0 to 6)
+       color(BlockColors): Specifies what color this block is
+    '''
     __slots__ = ['number', 'color']
 
-    def __init__(self, number: int, color: Enum):
+    def __init__(self, number: int, color: BlockColors):
+        '''Prepares block data
+
+        Number and color will be treated as private data
+
+        Args:
+           number(int): This block's number
+           color(BlockColors): This block's color
+
+        Raises:
+           TypeError: If number is not int or color is not instance of BlockColors
+        '''
+
         if isinstance(number, int) and isinstance(color, BlockColors):
             self.number = number
             self.color = color
+
         else:
             raise TypeError(f"#{number} is of type {type(number)} and color {color} is of type {type(color)}")
+
+    def isColor(self, color: BlockColors) -> bool:
+        '''Checks if this block's color is the specified one
+
+        Args:
+           color(BlockColors): Color we want to compare this block's to
+
+        Returns:
+           bool: True if this color and the passed color match
+
+        '''
+        return color == self.color
+
+    def __int__(self) -> int:
+        return self.number
+
+    def __float__(self) -> float:
+        return self.number
+
+    def __eq__(self, b2) -> bool:
+        if not isinstance(b2, Block):
+            raise ValueError(f'Cannot compare {type(b2)} with Block')
+
+        return self.color == b2.color and self.number == b2.number
+
+    def __lt__(self, b2) -> bool:
+        if not isinstance(b2, Block):
+            raise ValueError(f'Cannot compare {type(b2)} with Block')
+
+        return self.color == b2.color and self.number < b2.number
+
+    def __le__(self, b2) -> bool:
+        if not isinstance(b2, Block):
+            raise ValueError(f'Cannot compare {type(b2)} with Block')
+
+        return self.color == b2.color and self.number <= b2.number
+
+    def __gt__(self, b2) -> bool:
+        if not isinstance(b2, Block):
+            raise ValueError(f'Cannot compare {type(b2)} with Block')
+
+        return self.color == b2.color and self.number > b2.number
+
+    def __ge__(self, b2) -> bool:
+        if not isinstance(b2, Block):
+            raise ValueError(f'Cannot compare {type(b2)} with Block')
+
+        return self.color == b2.color and self.number >= b2.number
+
+    def __add__(self, b2) -> int:
+        if isinstance(b2, Block) and self.isColor(b2.color):
+            return self.number + b2.number
+        elif isinstance(b2, int) or isinstance(b2, float):
+            return self.number + b2
+        else:
+            return 0
+
+    def __sub__(self, b2) -> int:
+        if isinstance(b2, Block) and self.isColor(b2.color):
+            return self.number - b2.number
+        elif isinstance(b2, int) or isinstance(b2, float):
+            return self.number - b2
+        else:
+            return 0
+
+    def __radd__(self, b1) -> int:
+        if isinstance(b1, Block) and self.isColor(b1.color):
+            return self.number + b1.number
+        elif isinstance(b1, int) or isinstance(b1, float):
+            return self.number + b1
+        else:
+            return 0
+
+    def __rsub__(self, b1) -> int:
+        if isinstance(b1, Block) and self.isColor(b1.color):
+            return b1.number - self.number
+        elif isinstance(b1, int) or isinstance(b1, float):
+            return b1 - self.number
+        else:
+            return 0
+
+    def __mul__(self, b2) -> int:
+        if isinstance(b2, Block) and self.isColor(b2.color):
+            return self.number * b2.number
+        elif isinstance(b2, int) or isinstance(b2, float):
+            return self.number * b2
+        else:
+            return 0
+
+    def __truediv__(self, b2) -> int:
+        if isinstance(b2, Block) and self.isColor(b2.color):
+            return self.number / b2.number
+        elif isinstance(b2, int) or isinstance(b2, float):
+            return self.number / b2
+        else:
+            return 0
+
+    def __rmul__(self, b1) -> int:
+        if isinstance(b1, Block) and self.isColor(b1.color):
+            return self.number * b1.number
+        elif isinstance(b1, int) or isinstance(b1, float):
+            return self.number * b1
+        else:
+            return 0
+
+    def __rtruediv__(self, b1) -> int:
+        if isinstance(b1, Block) and self.isColor(b1.color):
+            return b1.number / self.number
+        elif isinstance(b1, int) or isinstance(b1, float):
+            return b1 / self.number
+        else:
+            return 0
+
 
     def __str__(self):
         return f"[{self.number},{str(self.color).split('.')[-1]}]"
@@ -61,12 +196,10 @@ class Stack:
         self.head = self.Node()
         self.height = 0
 
-
     def push(self, element):
         if element is None:
             return False
 
-        # push stack right on top without altering order
         elif isinstance(element, Stack):
             temp = Stack()
             while not element.isEmpty():
@@ -91,11 +224,11 @@ class Stack:
         else:
             raise TypeError(f"Expected either None, Stack or Block. Received {type(element)}")
 
-    def pop(self):
+    def pop(self, n: int = None):
         if self.isEmpty():
             return None
 
-        else:
+        elif n is None:
             removedNode = self.head.next
             value = removedNode.value
 
@@ -106,11 +239,50 @@ class Stack:
 
             return value
 
-    def top(self):
+        elif isinstance(n, int) or isinstance(n, float):
+            if n > self.height:
+                raise ValueError(f"Desired {int(n)} exceeds height {self.height}")
+
+
+            temp = Stack()
+
+            for i in range(int(n)):
+                temp.push(self.pop())
+
+            result = Stack()
+
+            while not temp.isEmpty():
+                result.push(temp.pop())
+
+            del temp
+
+            return result
+
+    def top(self, n: int = None):
         if self.isEmpty():
             return None
-        else:
+        elif n is None:
             return self.head.next.value
+        elif isinstance(n, int) or isinstance(n, float):
+            if n > self.height:
+                raise ValueError(f"Desired {int(n)} exceeds height {self.height}")
+
+            copy = self.copy()
+            temp = Stack()
+
+            for i in range(int(n)):
+                temp.push(copy.pop())
+
+            del copy
+
+            result = Stack()
+
+            while not temp.isEmpty():
+                result.push(temp.pop())
+
+            del temp
+
+            return result
 
     def isEmpty(self):
         return self.height == 0
@@ -134,6 +306,26 @@ class Stack:
 
         return copy
 
+    def isValid(self):
+        copy = self.copy()
+
+        count = 1
+        while copy.height > 1 and copy.pop() < copy.top():
+            count += 1
+
+        return self.height == count
+
+    def isConsecutive(self):
+        copy = self.copy()
+
+        count = 1
+        while copy.height > 1 and copy.pop() - copy.top() == -1:
+            count += 1
+
+        return self.height == count
+
+
+
     def __str__(self):
         copy = self.copy()
 
@@ -147,7 +339,6 @@ class Stack:
     def __repr__(self):
         return str(self)
 
-    
     def __hash__(self):
         copy = self.copy()
 
@@ -171,17 +362,24 @@ class Game:
         if isinstance(param, str):
             self.stacks = [Stack() for _ in range(8)]
             self.parse_from_file(param)
+
         elif isinstance(param, list) and isinstance(param[0], Stack):
             self.stacks = param
+
         elif isinstance(param, Game):
             self = Game.copy()
+
         else:
             raise TypeError("Expected list of stacks or string with filename")
 
 
     def parse_from_file(self, file_name: str):
+        if not os.path.exists(file_name):
+            return ValueError(f"Cannot find file {file_name}")
+
         with open(file_name, 'r') as fp:
             lines = fp.readlines()
+
             # Add blocks to stacks from bottom to top
             for line in lines:
                 blocks = line.split(",")
@@ -200,246 +398,223 @@ class Game:
                     self.stacks[column].push(block)
 
 
-    @staticmethod
-    def invert_stack(S):
-        copy = S.copy()
-        inverted = Stack()
-        while not copy.isEmpty():
-            inverted.push(copy.pop())
+    def is_valid_move(self, src: int, dest: int, src_height: int) -> bool:
+        '''Checks if move from src to dest with src_height is valid based on game rules
 
-        return inverted
+        This function bascally establishes the game's rules
 
-    @classmethod
-    def extract_from_stack(cls, S, amount: int):
-        copy = S.copy()
-        
-        if S.height < amount:
-            raise ValueError(f"Cannot extract {amount} from Stack with height {S.height}")
+        Args:
+           src(int): Index of source stack in stacks array
+           dest(int): Index of destination stack in stacks array
+           src_height(int): Height of the source array to be moved
 
-        temp = Stack()
-        for i in range(amount):
-            temp.push(copy.pop())
+        Returns:
+           bool: True if move complies with game rules
 
-        return cls.invert_stack(temp)
-    
-    @staticmethod
-    def is_consecutive_stack(S) -> bool:
-        copy = S.copy()
+        Raises:
+           ValueError: If inputs exceed stack size of height
+        '''
 
-        if copy.height <= 1:
-            return True
-        else:
-            curr_block = copy.pop()
-
-            while copy.height >= 1:
-
-                conditions = [
-                        isinstance(curr_block, Block),
-                        isinstance(copy.top(), Block),
-                        curr_block.color == copy.top().color,
-                        copy.top().number - curr_block.number == 1
-                        ]
-                if not all(conditions):
-                    return False
-                else:
-                    curr_block = copy.pop()
-
-            return True
-
-    @staticmethod
-    def is_valid_stack(S) -> bool:
-        copy = S.copy()
-
-        if copy.height <= 1:
-            return True
-        else:
-            curr_block = copy.pop()
-
-            while copy.height >= 1:
-
-                conditions = [
-                        isinstance(curr_block, Block),
-                        isinstance(copy.top(), Block),
-                        curr_block.color == copy.top().color,
-                        copy.top().number > curr_block.number
-                        ]
-                if not all(conditions):
-                    return False
-                else:
-                    curr_block = copy.pop()
-
-            return True
-
-
-    def is_valid_move(self, src: int, src_height: int, dest: int) -> bool:
-        if src < 0 or src >= len(self.stacks) or dest < 0 or dest >= len(self.stacks) or src_height > self.stacks[src].height:
-            raise ValueError(f"Expected src {src} of height {src_height} -> dest {dest} to be within bounds (0-7)")
+        if src < 0 or src >= len(self.stacks) or dest < 0 or dest >= len(self.stacks):
+            raise ValueError(f"Expected src {src} -> dest {dest} to be within bounds (0-7)")
             #  return False
 
-        # Extract specified source
-        source = self.extract_from_stack(self.stacks[src], src_height)
+        if src_height > self.stacks[src].height:
+            raise ValueError(f"Expected src_height {src_height} to be <= stack height {self.stacks[src].height}")
 
-        if not self.is_consecutive_stack(source):
+        elif src_height == 0:
+            raise ValueError(f"Expected src_height to be greater than 0")
+
+
+        # If the specified source is not consecutive (even if it were valid)
+        # We canot split a stack that is not consecutive
+        if not self.stacks[src].top(src_height).isConsecutive():
             return False
 
+        # Cannot split up a stack that is consecutive "mid-way"
+        if self.stacks[src].height > src_height and self.stacks[src].top(src_height + 1).isConsecutive():
+            return False
 
-        # Do not "break off" already consecutive towers
-        if src_height + 1 <= self.stacks[src].height:
-            # Extract specified source. However, it is in inverted order
-            copy = self.extract_from_stack(self.stacks[src], src_height + 1)
+        copy = self.stacks[src].top(src_height)
+        while copy.height > 1:
+            copy.pop()
+        bottom_src_block = copy.top()
 
-            if self.is_consecutive_stack(copy):
-                return False
-
-
-        dest_block = self.stacks[dest].top()
-
-        inverted_source = self.invert_stack(source)
 
         # Empty slots are more than capable of holding any valid stack. However,
-        # I'm making a custom rule to prevent this
+        # I'm making a custom rule to prevent some moves
         if self.stacks[dest].height == 0:
-           # Just prevent any block coming from empty source to moving to empty destination
+
+           # Prevent any block coming from empty source to moving to empty destination
             if src_height == self.stacks[src].height:
                 return False
+
             return True
 
         # Otherwise, compare the bottom of the src stack with the destination stack
-        elif inverted_source.top().color == dest_block.color and inverted_source.top().number < dest_block.number:
+        elif bottom_src_block < self.stacks[dest].top():
             return True
 
         return False
 
 
-    def move(self, src: int, src_height: int, dest: int) -> bool:
-        if not self.is_valid_move(int(src), int(src_height), int(dest)):
+    def move(self, src: int, dest: int, src_height: int) -> bool:
+        '''Perform a move action from origin to destination with specific height
+
+        Args:
+           src(int): Index of source stack in stacks array
+           dest(int): Index of destination stack in stacks array
+           src_height(int): Height of the source array to be moved
+
+        Returns:
+           bool: True if operation was successful
+        '''
+
+        if not self.is_valid_move(int(src), int(dest), int(src_height)):
             return False
 
-        # push top src_height blocks of src to a src stack
-        temp = Stack()
-        source = Stack()
-        for i in range(src_height):
-            temp.push(self.stacks[src].pop())
-        while not temp.isEmpty():
-            source.push(temp.pop())
-        del temp
-
-        self.stacks[dest].push(source)
+        self.stacks[dest].push(self.stacks[src].pop(src_height))
 
         return True
 
 
     def possible_moves(self):
+        '''Python generator that returns all possible moves one by one
+
+        Returns:
+           (src, dest, height): Source, destination indices and height of stack
+           to be used with the ::meth::Game.Game.move() method
+        '''
+
         for src in range(len(self.stacks)):
+
             # Do not consider removing elements from empty stacks
             if self.stacks[src].height == 0:
                 continue
 
             for dest in range(len(self.stacks)):
-                # Do not consider staying the same
+                # Do not consider staying the same place
                 if src == dest:
                     continue
 
                 if self.stacks[src].height > 1:
+                    # Check all potential heights
                     for height in range(1, self.stacks[src].height + 1):
-                        if self.is_valid_move(src, height, dest):
-                            yield (src, height, dest)
-                elif self.stacks[src].height == 1:
-                    if self.is_valid_move(src, 1, dest):
-                        yield (src, 1, dest)
+                        if self.is_valid_move(src, dest, height):
+                            yield (src, dest, height)
+
+                        # !! End height loop early whenever possible
+                        elif not self.stacks[src].top(height).isConsecutive():
+                            continue
+
+                else:
+                    if self.is_valid_move(src, dest, 1):
+                        yield (src, dest, 1)
 
 
-    def won(self):
+    def won(self) -> bool:
+        '''Checks if game fulfills winning condition
+
+        Returns:
+           bool: True if game fulfills winning condition
+        '''
         stacks = [s.copy() for s in self.stacks]
 
-        colors_seen = set()
-    
         # Elements must be in ascending order with the correct color
         for stack in stacks:
-            while stack.height > 1:
-                prev = stack.pop()
-                curr = stack.top()
-
-                colors_seen.add(prev.color)
-
-                if prev.color != curr.color or prev.number > curr.number:
-                    return False
-
-        # Elements must occupy least amount of space possible
-        occupied_stacks = sum([int(stack.height > 0) for stack in stacks])
-        if len(colors_seen) != occupied_stacks:
-            return False
+            if stack.height == 0:
+                continue
+            elif not(stack.height == 7 and stack.isConsecutive()):
+                return False
 
         return True
 
 
     def static_evaluation(self) -> int:
+        '''Evaluates game state and returns a number
+
+        The bigger the number of the game evaluation, the closer the game is to
+        the winning state.
+
+        196 * 6 towers = 1176 corresponds to the winning game
+
+        Formula:
+           stack.height * sum(map(lambda x: x.number + 1, stack)) -
+            missing.height * sum(map(lambda x: x.number + 1, missing))
+
+           If stack is consecutive, missing.height = 0 and result will simply
+           be the first term (sum of elements offset by 1 multiplied by its height)
+
+           If stack is valid, we need to extract the missing terms and
+            proceed with calculations. The subtraction will help penalize
+            valid, but not consecutive stacks
+
+        Returns:
+           int: Static evaluation of current game state
+        '''
         total = 0
 
         for stack in self.stacks:
-
-            # Use "temporary" total value to only take into account value for
-            # this stack in later calculations
-            curr_total = 0
-
-            if not stack.isEmpty():
-                stack = stack.copy()
-
-                # Check for stacks in consecutive order
-                for i in range(stack.height-1, -1, -1):
-                    if self.is_consecutive_stack(self.extract_from_stack(stack, i)):
-                        curr_total += i
-                        break
-
-                # Use a multiplier for sequences (to motivate getting stacks)
-                if curr_total == 7:
-                    curr_total = 10000
-
-                elif curr_total >= 1:
-                    ns = stack.top().number
-                    ne = stack.top().number + curr_total
-                    curr_total = (ne*ne + ne - ns*ns + ns) / 2
-                    curr_total *= 100
+            # Empty stacks MUST be ignored
+            if stack is None or stack.height == 0:
+                continue
 
 
-                # Check for stacks in valid order
-                else:
-                    for i in range(stack.height-1, -1, -1):
-                        if self.is_valid_stack(self.extract_from_stack(stack, i)):
-                            curr_total += i
-                            break
+            # There will not be any missing elements if the full stack is consecutive
+            if stack.isConsecutive():
+                top = stack.top() + 1
+                bottom = top + stack.height - 1
 
-                    # Use a multiplier for sequences (to motivate getting stacks)
-                    if curr_total == 7:
-                        curr_total = 100
+                # Adding all the elements of the *consecutive* stack offsetting all elements by 1
+                stack_sum = (bottom*bottom + int(bottom) - top*top + int(top)) / 2
 
-                    elif curr_total >= 1:
-                        ns = stack.top().number
-                        ne = stack.top().number + curr_total
-                        curr_total = (ne*ne + ne - ns*ns + ns) / 2
+                total += stack.height * stack_sum
+
+                continue
 
 
+            for height in range(stack.height, 1, -1):
+                if stack.top(height).isValid():
+                    missing_sum = 0
+                    missing_height = 0
 
-                #  # Reward stacks in valid order
-                #  for i in range(stack.height-1, -1, -1):
-                    #  if self.is_valid_stack(self.extract_from_stack(stack, i)):
-                        #  curr_total += i
-                        #  break
+                    stack_sum = 0
+                    stack_height = height
 
-                #  # Reward stacks with 6's at the bottom
-                #  if self.is_valid_stack(stack) and self.invert_stack(stack).top().number == 6:
-                    #  curr_total *= 10
+                    copy = stack.top(height)
+                    while copy.height > 1:
+                        prev = copy.pop()
+                        curr = copy.top()
 
-                #  # Heavily penalize lonely blocks
-                #  if stack.height == 1:
-                    #  curr_total = 0
-                #  elif stack.height == 2:
-                    #  curr_total /= 1000
-                #  elif stack.height == 3:
-                    #  curr_total /= 100
+                        stack_sum += prev + 1
 
+                        if curr - prev > 1:
+                            '''
+                            If prev = 2 and curr = 6, then end = curr - 1, start = prev + 1
 
-                total += curr_total
+                            But because of the +1 offset ...
+                                end = curr, start = prev + 2
+
+                            height = end - (start + 1) = end - start - 1
+
+                            AND
+
+                            sum = end * (end + 1) / 2 - (start - 1) * start / 2
+
+                                => curr * (cur + 1) / 2 - (prev + 1) * (prev + 2) / 2
+
+                                => 1/2 * (curr*curr + curr - prev*prev - 3*prev - 2)
+                            '''
+
+                            missing_height += curr - prev - 1
+                            missing_sum += (curr*curr + int(curr) - prev*prev - prev*3 - 2) / 2
+
+                    stack_sum += copy.pop() + 1
+
+                    total += stack_height * stack_sum - missing_height * missing_sum
+
+                    break
+
 
         return int(total)
 
@@ -458,9 +633,9 @@ class Game:
             for column in range(len(stacks)):
                 if row >= max_height - stacks[column].height:
                     temp = str(stacks[column].pop())[1:-1].split(",")
-                    message += f" {temp[0], temp[1][0:3]} "
+                    message += f" {temp[0], temp[1][0]} "
                 else:
-                    message += " "*14
+                    message += " "*12
 
             message += "\n"
 
@@ -479,33 +654,13 @@ class Game:
         return total
 
 
-
-
-
 def main():
-    game1 = Game("simp2.txt")
-    game2 = Game("simp2.txt")
-    game3 = Game("simp2.txt")
+    root_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
+    os.chdir(root_dir)
 
-    game1.print_stacks()
-    print(game1.move(0, 1, 5))
-    print(game1.static_evaluation())
-    game1.print_stacks()
-
-    game2.print_stacks()
-    print(game2.move(4, 1, 5))
-    print(game2.static_evaluation())
-    game2.print_stacks()
-
-    game3.print_stacks()
-    print(game3.move(4, 1, 0))
-    print(game3.static_evaluation())
-    game3.print_stacks()
-
-    #  game = Game("simp2.txt")
-    #  game.print_stacks()
-    #  print(game.static_evaluation())
-    #  breakpoint()
+    game = Game("input/simp2.txt")
+    game.print_stacks()
+    print(game.static_evaluation())
 
 if __name__ == "__main__":
     main()
