@@ -8,6 +8,11 @@ import os.path
 # ---------------------- Block Classes ---------------------------------------
 
 class BlockColors(Enum):
+    '''Colors that are available in the game
+
+    Structuring the alternatives as an enum makes some aspects of the code more
+    readable
+    '''
     Magenta = 1
     Red = 2
     Yellow = 3
@@ -16,13 +21,13 @@ class BlockColors(Enum):
     Indigo = 6
 
 colors_abbrev = {
-        'M': BlockColors.Magenta,
-        'R': BlockColors.Red,
-        'Y': BlockColors.Yellow,
-        'G': BlockColors.Green,
-        'C': BlockColors.Cyan,
-        'I': BlockColors.Indigo
-        }
+    'M': BlockColors.Magenta,
+    'R': BlockColors.Red,
+    'Y': BlockColors.Yellow,
+    'G': BlockColors.Green,
+    'C': BlockColors.Cyan,
+    'I': BlockColors.Indigo
+    }
 
 
 class Block:
@@ -168,7 +173,6 @@ class Block:
         else:
             return 0
 
-
     def __str__(self):
         return f"[{self.number},{str(self.color).split('.')[-1]}]"
 
@@ -183,9 +187,24 @@ class Block:
 
 
 class Stack:
+    '''Class that represents a stack of blocks in the game
+
+    Unlike the Stack Data Structure, it contains some unconventional operations
+    and names that help make the main Game functions much shorter and simpler
+
+    Attributes:
+       head(Stack.Node): Pointer to the top node of the stack
+       height(int): Amount of elements stored in stack
+    '''
     __slots__ = ['head', 'height']
 
     class Node:
+        '''Simple Singly Linked List node for Stack
+
+        Attributes:
+           next(Stack.Node): Pointer to next node, or None
+           value(Block): Instance of the block class
+        '''
         __slots__ = ['next', 'value']
         def __init__(self):
             self.next = None
@@ -196,7 +215,19 @@ class Stack:
         self.head = self.Node()
         self.height = 0
 
-    def push(self, element):
+    def push(self, element) -> bool:
+        '''Add block or other stack at the top of this stack
+
+        Args:
+           element(any): Can be a single Block or another Stack of Blocks
+
+        Returns:
+           bool: True if operation was successful
+
+        Raises:
+           TypeError: When trying to push elements that are not Stacks or Blocks
+        '''
+
         if element is None:
             return False
 
@@ -209,6 +240,8 @@ class Stack:
                 self.push(temp.pop())
 
             del temp
+
+            return True
 
         elif isinstance(element, Block):
             newNode = self.Node()
@@ -224,7 +257,23 @@ class Stack:
         else:
             raise TypeError(f"Expected either None, Stack or Block. Received {type(element)}")
 
+
     def pop(self, n: int = None):
+        '''Removes "n" amount of elements from top of stack and returns them as another stack (but in the correct order)
+
+        By default, it implements a more efficient solution, but when an integer
+        n is added, it uses a more time-consuming alternative to extract and
+        return all the popped elements in the correct order
+
+        Args:
+            n(int): Amount of elements to pop from top of stack
+
+        Returns:
+            Block or Stack[Block]: Removed elements
+
+        Raises:
+            ValueError: When popping more than the available height
+        '''
         if self.isEmpty():
             return None
 
@@ -258,11 +307,29 @@ class Stack:
 
             return result
 
+
     def top(self, n: int = None):
+        '''Extracts and returns "n" amount of elements from top of stack (in the correct order)
+
+        By default, it implements a more efficient solution, but when an integer
+        n is added, it uses a more time-consuming alternative to extract and
+        return all the popped elements in the correct order
+
+        Args:
+            n(int): Amount of elements to pop from top of stack
+
+        Returns:
+            Block or Stack[Block]: Top elements
+
+        Raises:
+            ValueError: When extracting more than the available height
+        '''
         if self.isEmpty():
             return None
+
         elif n is None:
             return self.head.next.value
+
         elif isinstance(n, int) or isinstance(n, float):
             if n > self.height:
                 raise ValueError(f"Desired {int(n)} exceeds height {self.height}")
@@ -284,7 +351,7 @@ class Stack:
 
             return result
 
-    def isEmpty(self):
+    def isEmpty(self) -> bool:
         return self.height == 0
 
     def clear(self):
@@ -306,7 +373,12 @@ class Stack:
 
         return copy
 
-    def isValid(self):
+    def isValid(self) -> bool:
+        '''Checks if the stack of blocks is valid
+
+        Returns:
+           bool: True if the following blocks are the same color and wider than the previous ones
+        '''
         copy = self.copy()
 
         count = 1
@@ -315,7 +387,13 @@ class Stack:
 
         return self.height == count
 
-    def isConsecutive(self):
+    def isConsecutive(self) -> bool:
+        '''Checks if the stack of blocks is consecutive
+
+        Returns:
+           bool: True if the following blocks are the same color and follows the
+           correct sequence after the previous one (1, 2, 3, etc.)
+        '''
         copy = self.copy()
 
         count = 1
@@ -325,8 +403,7 @@ class Stack:
         return self.height == count
 
 
-
-    def __str__(self):
+    def __str__(self) -> str:
         copy = self.copy()
 
         elements = list()
@@ -336,10 +413,10 @@ class Stack:
 
         return '[' + ', '.join([str(el) for el in elements]) + ']'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         copy = self.copy()
 
         total = 0
@@ -355,9 +432,17 @@ class Stack:
 
 
 class Game:
+    '''Game class, which tries to implement a simple version of SixTowers
+
+    It does so by validating moves before performing them, and making sure to
+    comply with all the basic game rules.
+
+    Attributes:
+       stacks: list of Stacks of Blocks with the current game arrangement
+    '''
     __slots__ = ['stacks']
 
-    def __init__(self, param: None):
+    def __init__(self, param = None):
 
         if isinstance(param, str):
             self.stacks = [Stack() for _ in range(8)]
@@ -374,6 +459,15 @@ class Game:
 
 
     def parse_from_file(self, file_name: str):
+        '''Helper function to help fill the stacks attribute with the contents of a file
+
+        Args:
+           file_name(str): Name of the file from which the data will be extracted
+
+        Raises:
+           ValueError: When file_name file is not found
+
+        '''
         if not os.path.exists(file_name):
             return ValueError(f"Cannot find file {file_name}")
 
@@ -620,10 +714,23 @@ class Game:
 
 
     def copy(self):
+        '''Make game copy and return it
+
+        Basically just clones stack attribute
+
+        Returns:
+           Game: Copy of current game
+
+        '''
         return Game([s.copy() for s in self.stacks])
 
 
     def print_stacks(self):
+        '''Print all stacks in a visually-appealing format
+
+        This format sort of ressembles the actual game
+        '''
+
         stacks = [s.copy() for s in self.stacks]
 
         max_height = max([s.height for s in stacks])
@@ -664,4 +771,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

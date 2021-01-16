@@ -2,7 +2,20 @@
 # -*- coding: utf-8 -*-
 import Game
 
-def minimax(position, depth):
+def minimax(position: Game.Game, depth: int) -> int:
+    '''The "max" part of the minimax function
+
+    SixTowers doesn't actually have an opponent (or minimizing players), so
+    probing and additional optimizations are not available
+
+    Args:
+       position(Game.Game): Game to use to begin testing alternatives
+       depth(int): Current depth of the: Current depth of recursion
+
+    Returns:
+       number(int): Maximum static evaluation after a testing all alternatives
+    '''
+
     if depth == 0 or position.won():
         return position.static_evaluation()
 
@@ -23,6 +36,11 @@ max_depth = 1
 
 
 def main():
+    ''' Runs game from stacks.txt file and finds solution
+
+    As i'm still optimizing, I'm printing the game on each step
+    '''
+
     base_game = Game.Game("../input/stacks.txt")
 
     curr_game = base_game.copy()
