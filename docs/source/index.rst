@@ -10,7 +10,7 @@ Welcome to Six Towers Solver's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   modules
+   autodoc/modules
 
 
 Indices and tables
